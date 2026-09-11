@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador Automático de Informes | Scouting</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#1e293b;
+    --panel2:#16213a;
+    --border:#2d3d59;
+    --red:#ef4444;
+    --green:#22c55e;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --accent:#3b82f6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:24px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+  h1{
+    font-size:22px;
+    letter-spacing:.5px;
+    border-left:4px solid var(--red);
+    padding-left:12px;
+    margin-bottom:4px;
+  }
+  .subtitle{color:var(--muted);margin-bottom:24px;font-size:13px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:20px;
+  }
+
+  .header-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:700px){
+    .header-grid{grid-template-columns:1fr 1fr;}
+  }
+  label{
+    display:block;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input[type=text], select{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px;
+    border-radius:6px;
+    font-size:14px;
+  }
+  input[type=text]:focus, select:focus{outline:1px solid var(--accent);}
+
+  .profile-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .profile-title h2{
+    font-size:16px;
+    margin:0;
+    color:var(--red);
+  }
+  .rating-box{
+    display:none;
+  }
+
+  .phrase-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .phrase-item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 10px;
+    cursor:pointer;
+    font-size:13.5px;
+    line-height:1.4;
+  }
+  .phrase-item:hover{border-color:var(--accent);}
+  .phrase-item input{margin-top:3px;}
+  .phrase-item.checked{
+    border-color:var(--green);
+    background:#132a1e;
+  }
+
+  .preview{
+    background:var(--panel2);
+    border:1px dashed var(--border);
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:13px;
+    color:var(--muted);
+    min-height:44px;
+    white-space:pre-wrap;
+  }
+  .preview.filled{color:var(--text);}
+
+  .freetext-wrap{margin-bottom:14px;}
+  .freetext-wrap label{margin-bottom:4px;}
+  .freetext-wrap textarea{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px;
+    border-radius:6px;
+    font-size:13.5px;
+    font-family:inherit;
+    resize:vertical;
+    min-height:50px;
+  }
+  .freetext-wrap textarea:focus{outline:1px solid var(--accent);}
+
+  .conclusion-section{margin-bottom:18px;}
+  .conclusion-section h3{
+    font-size:14px;
+    margin:0 0 10px 0;
+    color:var(--green);
+  }
+  .conclusion-section.debilidades h3{color:var(--red);}
+  .conclusion-section.mejorar h3{color:var(--accent);}
+
+  .generate-btn{
+    display:block;
+    width:100%;
+    padding:14px;
+    background:var(--red);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:.5px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .generate-btn:hover{background:#dc2626;}
+
+  #reportOutput{display:none;}
+  .report-block{
+    border-left:3px solid var(--green);
+    padding:12px 16px;
+    margin-bottom:12px;
+    background:var(--panel2);
+    border-radius:0 6px 6px 0;
+  }
+  .report-block h3{
+    margin:0 0 6px 0;
+    font-size:14px;
+    color:var(--green);
+    display:flex;
+    justify-content:space-between;
+  }
+  .report-block p{margin:0;font-size:13.5px;line-height:1.5;color:var(--text);}
+
+  .print-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    margin-top:10px;
+  }
+
+  @page{
+    size: A4;
+    margin: 15mm;
+  }
+  @media print{
+    body{background:#fff;color:#000;padding:0;}
+    .wrap{max-width:100%;}
+    .card:not(#reportOutput .card){display:none !important;}
+    .no-print{display:none !important;}
+    #reportOutput{display:block !important;}
+    #reportOutput > .card:first-child{background:var(--panel) !important;}
+    #outName{color:#fff !important;}
+    #outTeam, #outPosition, #outFoot{color:var(--muted) !important;}
+    .report-block{background:#fff;border:1px solid #ccc;break-inside:avoid;}
+    .report-block h3, .report-block p{color:#000;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>GENERADOR AUTOMÁTICO DE INFORMES</h1>
+  <div class="subtitle">Seleccioná lo que observaste en cancha — el sistema arma el texto por vos</div>
+
+  <!-- DATOS DEL JUGADOR -->
+  <div class="card no-print">
+    <div class="header-grid">
+      <div>
+        <label>Nombre del jugador</label>
+        <input type="text" id="playerName" placeholder="Ej: Juan Pérez">
+      </div>
+      <div>
+        <label>Equipo</label>
+        <input type="text" id="playerTeam" placeholder="Ej: Club Atlético X">
+      </div>
+      <div>
+        <label>Puesto</label>
+        <select id="playerPosition" onchange="renderAllProfiles()">
+          <option value="">Seleccionar puesto...</option>
+        </select>
+      </div>
+      <div>
+        <label>Pie hábil</label>
+        <select id="playerFoot">
+          <option value="Derecho">Derecho</option>
+          <option value="Izquierdo">Izquierdo</option>
+          <option value="Ambidiestro">Ambidiestro</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERFILES -->
+  <div id="profilesContainer" class="no-print"></div>
+
+  <!-- CONCLUSIÓN GENERAL -->
+  <div id="conclusionContainer" class="no-print"></div>
+
+  <!-- BOTÓN GENERAR -->
+  <button class="generate-btn no-print" onclick="generateReport()">⚽ GENERAR INFORME</button>
+
+  <!-- INFORME FINAL -->
+  <div id="reportOutput">
+    <div class="card">
+      <div class="header-grid" style="margin-bottom:10px;">
+        <div><strong id="outName"></strong></div>
+        <div id="outTeam" style="color:var(--muted);"></div>
+        <div id="outPosition" style="color:var(--muted);"></div>
+        <div id="outFoot" style="color:var(--muted);"></div>
+      </div>
+    </div>
+    <div id="reportBlocks"></div>
+    <div id="reportConclusion"></div>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Exportar / Imprimir PDF</button>
+    <button class="print-btn no-print" style="background:var(--panel2);border:1px solid var(--border);" onclick="backToForm()">✏️ Volver a editar</button>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   BANCO DE FRASES POR PUESTO Y PERFIL
+   Cada frase tiene: texto (text) y tono (tone: "pos" o "neg")
+   El tono se usa para sugerir la recomendación 1-5.
+   Fede: esto es un punto de partida, lo vamos afinando.
+========================================================= */
+const PHRASES = {
+  "Arquero": {
+    tecnico: [
+      {text:"Buen manejo de pelota con los pies para la salida corta.", tone:"pos"},
+      {text:"Achique correcto en mano a mano.", tone:"pos"},
+      {text:"Buena colocación bajo los tres palos.", tone:"pos"},
+      {text:"Le cuesta el juego aéreo, no domina el área.", tone:"neg"},
+      {text:"Reacciones dudosas ante remates cercanos.", tone:"neg"},
+      {text:"Buen manejo de rechazos, no da rebotes peligrosos.", tone:"pos"},
+      {text:"Buena capacidad de reflejos en remates a quemarropa.", tone:"pos"},
+      {text:"Precisión en el saque largo para encontrar compañeros.", tone:"pos"},
+      {text:"Le cuesta ajustar el bote de pelota en las salidas bajas.", tone:"neg"},
+      {text:"Buen manejo de una mano en centros laterales.", tone:"pos"},
+      {text:"Inseguro en el achique de centros al área.", tone:"neg"},
+      {text:"Buena técnica de caída en el remate al primer palo.", tone:"pos"},
+      {text:"Buena salida con los puños en situaciones de área congestionada.", tone:"pos"},
+      {text:"Precisión en el saque de arco corto para iniciar la jugada.", tone:"pos"},
+      {text:"Le cuesta la salida con el pie bajo presión de un rival cerca.", tone:"neg"},
+      {text:"Rechazos imprecisos que generan segundas jugadas peligrosas.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buena lectura para achicar espacios y anticipar centros.", tone:"pos"},
+      {text:"Comunica y ordena bien a la línea de fondo.", tone:"pos"},
+      {text:"Participa activamente en la salida desde el fondo.", tone:"pos"},
+      {text:"Mal posicionado en jugadas de pelota parada en contra.", tone:"neg"},
+      {text:"Le cuesta salir del área para cubrir espacios detrás de la línea.", tone:"neg"},
+      {text:"Buena ubicación en el arco ante remates lejanos.", tone:"pos"},
+      {text:"Anticipa bien los pases filtrados detrás de la defensa.", tone:"pos"},
+      {text:"Se demora en decisiones de salir o quedarse en el área.", tone:"neg"},
+      {text:"Buen manejo de los tiempos en el juego aéreo.", tone:"pos"},
+      {text:"Poca participación en la circulación del equipo.", tone:"neg"},
+      {text:"Buena capacidad para adelantar la línea defensiva con su posicionamiento.", tone:"pos"},
+      {text:"Se anticipa bien en los balones filtrados al espacio.", tone:"pos"},
+      {text:"Duda en la salida cuando hay una pelota dividida en el área.", tone:"neg"},
+      {text:"Poca lectura para achicar en jugadas de contraataque rápido.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Buena elasticidad y reflejos en el área chica.", tone:"pos"},
+      {text:"Buen salto y potencia en el juego aéreo.", tone:"pos"},
+      {text:"Le falta explosividad en distancias cortas.", tone:"neg"},
+      {text:"Buen porte físico, ocupa bien el arco.", tone:"pos"},
+      {text:"Buena recuperación física entre jugada y jugada.", tone:"pos"},
+      {text:"Pierde estabilidad en el achique por falta de potencia en piernas.", tone:"neg"},
+      {text:"Buena envergadura para cubrir el ángulo del arco.", tone:"pos"},
+      {text:"Se cansa en los tramos finales del partido.", tone:"neg"},
+      {text:"Buena velocidad de piernas para achicar el ángulo rápido.", tone:"pos"},
+      {text:"Buena estatura relativa que le da ventaja en el juego aéreo.", tone:"pos"},
+      {text:"Le cuesta la recuperación explosiva tras una estirada.", tone:"neg"},
+      {text:"Pierde potencia de salto en la segunda mitad del partido.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Transmite seguridad y liderazgo al equipo.", tone:"pos"},
+      {text:"Se desconcentra tras recibir un gol.", tone:"neg"},
+      {text:"Buena concentración durante los 90 minutos.", tone:"pos"},
+      {text:"Le cuesta manejar la presión en partidos decisivos.", tone:"neg"},
+      {text:"Buena serenidad para tomar decisiones en momentos de tensión.", tone:"pos"},
+      {text:"Se comunica poco con la defensa en momentos clave.", tone:"neg"},
+      {text:"Buena personalidad para exigir a sus compañeros.", tone:"pos"},
+      {text:"Se lo nota inseguro ante situaciones de mano a mano.", tone:"neg"},
+      {text:"Buena capacidad de liderazgo verbal para corregir a la defensa en vivo.", tone:"pos"},
+      {text:"Buena resiliencia para sobreponerse a un error propio.", tone:"pos"},
+      {text:"Se enoja con sus compañeros ante errores defensivos ajenos.", tone:"neg"},
+      {text:"Pierde el foco tras una racha de partidos sin exigencia.", tone:"neg"}
+    ]
+  },
+  "Defensor Central": {
+    tecnico: [
+      {text:"Buena salida jugando desde el fondo.", tone:"pos"},
+      {text:"Preciso en el pase largo para romper líneas.", tone:"pos"},
+      {text:"Perfil habilidoso para el juego aéreo defensivo.", tone:"pos"},
+      {text:"Comete errores no forzados en la salida.", tone:"neg"},
+      {text:"Buena entrada limpia, no se anticipa con falta.", tone:"pos"},
+      {text:"Le cuesta el primer control bajo presión.", tone:"neg"},
+      {text:"Buena técnica de despeje en momentos de riesgo.", tone:"pos"},
+      {text:"Preciso en el pase corto para iniciar la jugada.", tone:"pos"},
+      {text:"Se equivoca en pases claves bajo presión rival.", tone:"neg"},
+      {text:"Buen dominio orientado para girar en salida.", tone:"pos"},
+      {text:"Impreciso en los pases diagonales largos.", tone:"neg"},
+      {text:"Buena anticipación en el corte de centros.", tone:"pos"},
+      {text:"Buen manejo del pase interior para romper la primera línea de presión.", tone:"pos"},
+      {text:"Preciso en la conducción corta cuando decide salir jugando.", tone:"pos"},
+      {text:"Se le complica el juego con marca encima al recibir de espaldas.", tone:"neg"},
+      {text:"Rechazos apurados que pierden precisión y dirección.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Excelente lectura de la línea, achica bien los espacios.", tone:"pos"},
+      {text:"Buen manejo del fuera de juego.", tone:"pos"},
+      {text:"Ordena y comunica bien a la defensa.", tone:"pos"},
+      {text:"Se descoloca en las coberturas.", tone:"neg"},
+      {text:"Le cuesta anticipar los movimientos del delantero rival.", tone:"neg"},
+      {text:"Buena salida en diagonal para cubrir a un compañero.", tone:"pos"},
+      {text:"Poca participación en la marca de pelota parada.", tone:"neg"},
+      {text:"Buena capacidad para achicar líneas en bloque.", tone:"pos"},
+      {text:"Se anticipa bien en los duelos aéreos ofensivos rivales.", tone:"pos"},
+      {text:"Buena capacidad para achicar y presionar al rival con la pelota.", tone:"pos"},
+      {text:"Sabe cuándo entrar y cuándo temporizar frente al delantero.", tone:"pos"},
+      {text:"Se deja arrastrar por movimientos falsos del rival.", tone:"neg"},
+      {text:"Pierde la marca en jugadas de pelota parada a favor.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Fuerte en el duelo individual, gana la mayoría de los cruces.", tone:"pos"},
+      {text:"Buen salto y potencia en el juego aéreo.", tone:"pos"},
+      {text:"Velocidad limitada en carrera de recuperación.", tone:"neg"},
+      {text:"Buena resistencia a lo largo del partido.", tone:"pos"},
+      {text:"Buena fuerza en el enfrentamiento cuerpo a cuerpo.", tone:"pos"},
+      {text:"Pierde el duelo físico ante delanteros de porte grande.", tone:"neg"},
+      {text:"Buena capacidad de recuperación en carrera larga.", tone:"neg"},
+      {text:"Buena potencia en el salto para el rechazo aéreo.", tone:"pos"},
+      {text:"Se sostiene bien físicamente en los duelos prolongados.", tone:"pos"},
+      {text:"Pierde el duelo de fuerza en los enganches dentro del área.", tone:"neg"},
+      {text:"Le cuesta la velocidad de reacción ante el primer toque del rival.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buen liderazgo y personalidad en la línea defensiva.", tone:"pos"},
+      {text:"Se apresura y comete faltas evitables bajo presión.", tone:"neg"},
+      {text:"Mantiene la calma en situaciones de riesgo.", tone:"pos"},
+      {text:"Baja la intensidad cuando el partido está resuelto.", tone:"neg"},
+      {text:"Buena capacidad de comunicación con el arquero.", tone:"pos"},
+      {text:"Se descontrola ante el roce con el rival.", tone:"neg"},
+      {text:"Buena madurez para asumir riesgos calculados.", tone:"pos"},
+      {text:"Buena personalidad para pedir la pelota bajo presión rival.", tone:"pos"},
+      {text:"Mantiene el orden mental aún en desventaja en el marcador.", tone:"pos"},
+      {text:"Se victimiza ante los fallos propios frente al árbitro.", tone:"neg"},
+      {text:"Pierde el control emocional tras una jugada de gol en contra.", tone:"neg"}
+    ]
+  },
+  "Lateral": {
+    tecnico: [
+      {text:"Buen centro al área desde ambos costados.", tone:"pos"},
+      {text:"Preciso en el 1v1 defensivo.", tone:"pos"},
+      {text:"Buen manejo de pelota en velocidad.", tone:"pos"},
+      {text:"Centro impreciso, pierde muchos balones en ataque.", tone:"neg"},
+      {text:"Le cuesta el control orientado en espacios reducidos.", tone:"neg"},
+      {text:"Buena pegada para el centro atrasado.", tone:"pos"},
+      {text:"Preciso en el pase interior para asociarse.", tone:"pos"},
+      {text:"Se apresura en la definición del centro.", tone:"neg"},
+      {text:"Buena capacidad de gambeta corta en la banda.", tone:"pos"},
+      {text:"Impreciso en la entrega bajo presión alta.", tone:"neg"},
+      {text:"Buena calidad de pase para encontrar al volante interior.", tone:"pos"},
+      {text:"Preciso en el pase largo diagonal para el cambio de frente.", tone:"pos"},
+      {text:"Se enreda con la pelota en espacios cortos ante la presión.", tone:"neg"},
+      {text:"Poca variante en el centro, siempre lo tira igual.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buen equilibrio entre el repliegue y el apoyo ofensivo.", tone:"pos"},
+      {text:"Genera superioridad numérica por la banda.", tone:"pos"},
+      {text:"Se desordena tácticamente cuando sube al ataque.", tone:"neg"},
+      {text:"Buena cobertura del espacio a su espalda.", tone:"pos"},
+      {text:"Deja espacios libres en las transiciones defensivas.", tone:"neg"},
+      {text:"Buena lectura para achicar sobre el extremo rival.", tone:"pos"},
+      {text:"Se demora en el repliegue tras la pérdida.", tone:"neg"},
+      {text:"Buen apoyo constante para generar el 2v1 en banda.", tone:"pos"},
+      {text:"Poca ayuda a su central en las coberturas internas.", tone:"neg"},
+      {text:"Buena sincronización con el extremo de su lado en el ataque.", tone:"pos"},
+      {text:"Sabe cuándo quedarse atrás y cuándo sumarse al ataque.", tone:"pos"},
+      {text:"Se sube al ataque sin cubrir el espacio detrás correctamente.", tone:"neg"},
+      {text:"Pierde referencia de marca en los cambios de orientación.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Buen ida y vuelta durante todo el partido.", tone:"pos"},
+      {text:"Explosivo en el primer paso.", tone:"pos"},
+      {text:"Pierde ritmo físico en el segundo tiempo.", tone:"neg"},
+      {text:"Buena resistencia aeróbica.", tone:"pos"},
+      {text:"Buena velocidad de recuperación tras perder la marca.", tone:"pos"},
+      {text:"Le cuesta sostener la intensidad en partidos exigentes.", tone:"neg"},
+      {text:"Buena potencia para el enfrentamiento físico en la banda.", tone:"pos"},
+      {text:"Buena capacidad de repetir sprints a lo largo del partido.", tone:"pos"},
+      {text:"Se lo nota liviano en los duelos contra extremos fuertes.", tone:"neg"},
+      {text:"Pierde velocidad de reacción en la marca de cierre.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena personalidad para encarar el 1v1.", tone:"pos"},
+      {text:"Se pone nervioso en situaciones de presión alta.", tone:"neg"},
+      {text:"Constante y aplicado en las dos fases del juego.", tone:"pos"},
+      {text:"Baja la concentración en tramos del partido.", tone:"neg"},
+      {text:"Buena valentía para proponer por la banda.", tone:"pos"},
+      {text:"Se desconcentra en marcas individuales prolongadas.", tone:"neg"},
+      {text:"Buena disciplina táctica para no desequilibrar al equipo.", tone:"pos"},
+      {text:"Buena entrega y compromiso en el repliegue defensivo.", tone:"pos"},
+      {text:"Se enoja con el árbitro y pierde el foco del partido.", tone:"neg"},
+      {text:"Duda entre atacar o cubrir, se paraliza en la decisión.", tone:"neg"}
+    ]
+  },
+  "Volante Central": {
+    tecnico: [
+      {text:"Buena distribución de pelota a corta y media distancia.", tone:"pos"},
+      {text:"Preciso en el cambio de frente.", tone:"pos"},
+      {text:"Buen primer control bajo presión.", tone:"pos"},
+      {text:"Pierde pelotas innecesarias en salida.", tone:"neg"},
+      {text:"Le cuesta el pase filtrado entre líneas.", tone:"neg"},
+      {text:"Buena técnica para girarse en espacios reducidos.", tone:"pos"},
+      {text:"Preciso en los pases al primer toque.", tone:"pos"},
+      {text:"Impreciso en la pegada de media distancia.", tone:"neg"},
+      {text:"Buen manejo de pelota para temporizar el juego.", tone:"pos"},
+      {text:"Se traba en la salida cuando lo presionan de frente.", tone:"neg"},
+      {text:"Buena capacidad de recepción entre líneas para girar y jugar.", tone:"pos"},
+      {text:"Preciso en el pase en profundidad para romper líneas rivales.", tone:"pos"},
+      {text:"Se apura con el pase y pierde precisión en tramos de partido.", tone:"neg"},
+      {text:"Le cuesta sostener el balón ante la presión de dos rivales.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Excelente manejo de los tiempos del partido.", tone:"pos"},
+      {text:"Buena lectura para equilibrar ataque y defensa.", tone:"pos"},
+      {text:"Se desconecta del funcionamiento colectivo en tramos.", tone:"neg"},
+      {text:"Buena presión tras pérdida.", tone:"pos"},
+      {text:"Le cuesta la cobertura de espacios entre líneas.", tone:"neg"},
+      {text:"Buena movilidad para ofrecerse en apoyo constante.", tone:"pos"},
+      {text:"Se posiciona mal en las transiciones defensivas.", tone:"neg"},
+      {text:"Buena capacidad de asociación con ambas puntas.", tone:"pos"},
+      {text:"Buena inteligencia para cerrar líneas de pase rivales.", tone:"pos"},
+      {text:"Sabe dosificar el esfuerzo entre ambas fases del juego.", tone:"pos"},
+      {text:"Se posiciona mal en el doble pivote, deja línea de pase libre.", tone:"neg"},
+      {text:"Pierde el orden cuando el equipo pasa a defender en bloque bajo.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para sostener el ritmo de juego.", tone:"pos"},
+      {text:"Fuerte en el duelo cuerpo a cuerpo.", tone:"pos"},
+      {text:"Le falta intensidad en la recuperación de pelota.", tone:"neg"},
+      {text:"Buen despliegue en toda la cancha.", tone:"pos"},
+      {text:"Pierde ritmo de carrera en los últimos veinte minutos.", tone:"neg"},
+      {text:"Buena capacidad de repetir esfuerzos cortos.", tone:"pos"},
+      {text:"Buen despliegue físico para cubrir todo el mediocampo.", tone:"pos"},
+      {text:"Fuerte para sostener la pelota espaldas al arco rival.", tone:"pos"},
+      {text:"Pierde el duelo físico con volantes de mayor porte.", tone:"neg"},
+      {text:"Se queda sin piernas en los últimos veinte minutos.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena jerarquía para manejar el ritmo del equipo.", tone:"pos"},
+      {text:"Se acelera con la pelota en momentos clave.", tone:"neg"},
+      {text:"Buena madurez para tomar decisiones simples y efectivas.", tone:"pos"},
+      {text:"Baja el nivel de concentración en partidos parejos.", tone:"neg"},
+      {text:"Buena personalidad para pedir la pelota en momentos difíciles.", tone:"pos"},
+      {text:"Se frustra visiblemente ante errores propios.", tone:"neg"},
+      {text:"Buena capacidad de liderazgo silencioso dentro del campo.", tone:"pos"},
+      {text:"Buena entrega y sacrificio para recuperar la pelota perdida.", tone:"pos"},
+      {text:"Se queja con los árbitros y pierde concentración en el juego.", tone:"neg"},
+      {text:"Baja el rendimiento cuando el equipo no impone el ritmo.", tone:"neg"}
+    ]
+  },
+  "Volante Ofensivo": {
+    tecnico: [
+      {text:"Buena habilidad para el último pase.", tone:"pos"},
+      {text:"Buen manejo de pelota en espacios reducidos.", tone:"pos"},
+      {text:"Preciso en la pegada de media/larga distancia.", tone:"pos"},
+      {text:"Pierde eficacia en la definición.", tone:"neg"},
+      {text:"Le cuesta el juego de espaldas al arco.", tone:"neg"},
+      {text:"Buena gambeta en corto para desequilibrar.", tone:"pos"},
+      {text:"Preciso en los cambios de ritmo con pelota dominada.", tone:"pos"},
+      {text:"Impreciso en la definición mano a mano con el arquero.", tone:"neg"},
+      {text:"Buena visión para el pase entre líneas.", tone:"pos"},
+      {text:"Buena pegada al arco desde media distancia.", tone:"pos"},
+      {text:"Preciso en la asistencia con pase filtrado.", tone:"pos"},
+      {text:"Se apresura en la definición cuando tiene tiempo de sobra.", tone:"neg"},
+      {text:"Pierde el control en la primera pisada al recibir de espaldas.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buena movilidad para encontrar espacios entre líneas.", tone:"pos"},
+      {text:"Genera desequilibrio asociándose con los volantes.", tone:"pos"},
+      {text:"Poco aporte en la fase defensiva.", tone:"neg"},
+      {text:"Buena lectura de los espacios libres a la espalda de la defensa rival.", tone:"pos"},
+      {text:"Se aísla del funcionamiento colectivo en tramos del partido.", tone:"neg"},
+      {text:"Buen desmarque de ruptura en el último tercio.", tone:"pos"},
+      {text:"Poca ayuda en la marca durante la presión alta.", tone:"neg"},
+      {text:"Buena capacidad de encontrar el espacio entre las líneas rivales.", tone:"pos"},
+      {text:"Buen timing para incorporarse al área en el momento justo.", tone:"pos"},
+      {text:"Se cae del funcionamiento ofensivo cuando la pelota pasa por otro sector.", tone:"neg"},
+      {text:"Pierde posición ofensiva cuando el equipo pasa a defender.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Buena arrancada y cambio de ritmo.", tone:"pos"},
+      {text:"Resistencia limitada en los últimos minutos.", tone:"neg"},
+      {text:"Buena agilidad en espacios cortos.", tone:"pos"},
+      {text:"Buen equilibrio corporal en el choque con el rival.", tone:"pos"},
+      {text:"Pierde intensidad física tras el primer tiempo.", tone:"neg"},
+      {text:"Buena coordinación para el cambio de dirección con pelota dominada.", tone:"pos"},
+      {text:"Buena capacidad de arranque en distancias cortas.", tone:"pos"},
+      {text:"Se lo nota liviano en el choque con volantes de marca.", tone:"neg"},
+      {text:"Pierde ritmo de juego cuando el partido se vuelve físico.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena confianza para encarar situaciones de gol.", tone:"pos"},
+      {text:"Se frustra cuando el equipo no le da la pelota.", tone:"neg"},
+      {text:"Buena creatividad e iniciativa en el último tercio.", tone:"pos"},
+      {text:"Desconexión emocional cuando el equipo va perdiendo.", tone:"neg"},
+      {text:"Buena personalidad para pedir la responsabilidad del último pase.", tone:"pos"},
+      {text:"Baja los brazos tras fallar una jugada clave.", tone:"neg"},
+      {text:"Buena personalidad para pedir la pelota en momentos de presión.", tone:"pos"},
+      {text:"Buena capacidad de decisión en el último cuarto de cancha.", tone:"pos"},
+      {text:"Se aísla emocionalmente cuando el equipo no lo encuentra.", tone:"neg"},
+      {text:"Se pone ansioso y apura jugadas que no lo requieren.", tone:"neg"}
+    ]
+  },
+  "Extremo": {
+    tecnico: [
+      {text:"Buen desborde 1v1 por la banda.", tone:"pos"},
+      {text:"Preciso en el centro al área.", tone:"pos"},
+      {text:"Buena definición al pie del arquero.", tone:"pos"},
+      {text:"Pierde el balón en encares poco claros.", tone:"neg"},
+      {text:"Le cuesta el remate con la pierna hábil ajustado al palo.", tone:"neg"},
+      {text:"Buena técnica de finta para ganar la línea de fondo.", tone:"pos"},
+      {text:"Preciso en la definición hacia el segundo palo.", tone:"pos"},
+      {text:"Impreciso en el último pase tras el desborde.", tone:"neg"},
+      {text:"Buen manejo de pelota a máxima velocidad.", tone:"pos"},
+      {text:"Buena habilidad para el amague antes del desborde.", tone:"pos"},
+      {text:"Preciso en la definición desde media distancia hacia adentro.", tone:"pos"},
+      {text:"Se apura en el último pase y pierde claridad.", tone:"neg"},
+      {text:"Pierde el control al primer toque cuando encara a alta velocidad.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buena amplitud para generar espacios internos.", tone:"pos"},
+      {text:"Buen repliegue defensivo tras pérdida.", tone:"pos"},
+      {text:"Se aísla del funcionamiento colectivo.", tone:"neg"},
+      {text:"Buen desmarque en profundidad.", tone:"pos"},
+      {text:"Poca colaboración defensiva sobre su lateral.", tone:"neg"},
+      {text:"Buena lectura para asociarse con el volante interior.", tone:"pos"},
+      {text:"Buena capacidad para jugar tanto por dentro como por fuera.", tone:"pos"},
+      {text:"Sabe generar el 1v2 combinando con el lateral de su lado.", tone:"pos"},
+      {text:"Se queda fijo en la banda sin buscar espacios internos.", tone:"neg"},
+      {text:"Poca vuelta para ayudar en la marca sobre su lateral.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Explosivo en velocidad punta.", tone:"pos"},
+      {text:"Buena resistencia para el ida y vuelta por la banda.", tone:"pos"},
+      {text:"Pierde intensidad física en el segundo tiempo.", tone:"neg"},
+      {text:"Buena capacidad de aceleración en pocos metros.", tone:"pos"},
+      {text:"Se desgasta rápido cuando encara en repetidas ocasiones.", tone:"neg"},
+      {text:"Buena capacidad de repetir sprints cortos por la banda.", tone:"pos"},
+      {text:"Buen equilibrio corporal para sostener el encare bajo contacto.", tone:"pos"},
+      {text:"Pierde estabilidad en el cambio de ritmo con pelota dominada.", tone:"neg"},
+      {text:"Se lo nota liviano en el choque con marcadores fuertes.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena personalidad para encarar rivales directos.", tone:"pos"},
+      {text:"Se desanima tras fallar una jugada clara.", tone:"neg"},
+      {text:"Buena valentía para pedir la pelota en momentos difíciles.", tone:"pos"},
+      {text:"Se enfría del partido cuando no recibe pelotas.", tone:"neg"},
+      {text:"Buena ambición para buscar el 1v1 constantemente.", tone:"pos"},
+      {text:"Buena confianza para repetir el encare tras perderlo una vez.", tone:"pos"},
+      {text:"Buena predisposición a ayudar en el repliegue defensivo.", tone:"pos"},
+      {text:"Se calienta con el marcador rival y pierde el foco.", tone:"neg"},
+      {text:"Baja los brazos cuando el equipo no le da la pelota seguido.", tone:"neg"}
+    ]
+  },
+  "Delantero Centro": {
+    tecnico: [
+      {text:"Buena definición dentro del área.", tone:"pos"},
+      {text:"Buen juego de espaldas y asociación con compañeros.", tone:"pos"},
+      {text:"Preciso en el remate de cabeza.", tone:"pos"},
+      {text:"Falla situaciones claras de gol.", tone:"neg"},
+      {text:"Le cuesta el control orientado con marca encima.", tone:"neg"},
+      {text:"Buena definición de primera sin necesidad de acomodar.", tone:"pos"},
+      {text:"Preciso en la definición cruzada.", tone:"pos"},
+      {text:"Impreciso en el remate con pelota dividida.", tone:"neg"},
+      {text:"Buen dominio orientado en la recepción de espaldas.", tone:"pos"},
+      {text:"Buena definición con ambas piernas dentro del área.", tone:"pos"},
+      {text:"Preciso en el toque sutil para habilitar a un compañero.", tone:"pos"},
+      {text:"Se apresura en la definición cuando tiene tiempo para pensarla.", tone:"neg"},
+      {text:"Pierde el control en la primera pisada dentro del área.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buenos movimientos para desmarcarse en profundidad.", tone:"pos"},
+      {text:"Buena presión sobre la salida del rival.", tone:"pos"},
+      {text:"Poco movimiento fuera del área.", tone:"neg"},
+      {text:"Buena lectura de los espacios entre centrales.", tone:"pos"},
+      {text:"Se desconecta del funcionamiento colectivo del equipo.", tone:"neg"},
+      {text:"Buen juego de apoyo para asociar con los volantes.", tone:"pos"},
+      {text:"Buenos movimientos para abrir espacios a la llegada de un compañero.", tone:"pos"},
+      {text:"Sabe fijar a los centrales para liberar espacio a los volantes ofensivos.", tone:"pos"},
+      {text:"Se estanca en el área sin generar movilidad.", tone:"neg"},
+      {text:"Pierde referencia de posición cuando el equipo no lo encuentra.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Fuerte para el juego de espaldas al arco.", tone:"pos"},
+      {text:"Buen salto y potencia en el área rival.", tone:"pos"},
+      {text:"Pierde los duelos cuerpo a cuerpo con centrales fuertes.", tone:"neg"},
+      {text:"Buena resistencia para sostener el esfuerzo durante el partido.", tone:"pos"},
+      {text:"Se cansa físicamente en los enfrentamientos prolongados.", tone:"neg"},
+      {text:"Buena potencia en el remate desde media distancia.", tone:"pos"},
+      {text:"Buen equilibrio corporal para resistir el forcejeo dentro del área.", tone:"pos"},
+      {text:"Pierde el duelo físico contra zagueros de mayor porte.", tone:"neg"},
+      {text:"Se lo nota liviano en los cruces aéreos defensivos.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena confianza en la definición.", tone:"pos"},
+      {text:"Se desconecta del partido cuando no convierte.", tone:"neg"},
+      {text:"Buena hambre de gol y ambición.", tone:"pos"},
+      {text:"Se frustra visiblemente tras fallar situaciones claras.", tone:"neg"},
+      {text:"Buena capacidad de recuperación mental tras un error.", tone:"pos"},
+      {text:"Buena ambición goleadora que lo mantiene activo todo el partido.", tone:"pos"},
+      {text:"Buena entrega en el trabajo sucio para el equipo.", tone:"pos"},
+      {text:"Se enoja con el equipo cuando no le llega la pelota.", tone:"neg"},
+      {text:"Pierde el rendimiento anímico tras un par de partidos sin gol.", tone:"neg"}
+    ]
+  },
+  "Carrilero": {
+    tecnico: [
+      {text:"Buen centro al área desde carrera profunda por el carril.", tone:"pos"},
+      {text:"Preciso en el 1v1 defensivo en su carril.", tone:"pos"},
+      {text:"Buen manejo de pelota en corridas largas por la banda.", tone:"pos"},
+      {text:"Centro impreciso tras la corrida larga.", tone:"neg"},
+      {text:"Le cuesta el control orientado a alta velocidad.", tone:"neg"},
+      {text:"Buena pegada para el centro atrasado.", tone:"pos"},
+      {text:"Preciso en la pared con el interior de su lado.", tone:"pos"},
+      {text:"Pierde el balón en los relevos de carril.", tone:"neg"},
+      {text:"Buena variante entre centro raso y centro alto.", tone:"pos"},
+      {text:"Impreciso en la definición cuando llega solo al área.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buen equilibrio entre subir y cubrir todo el carril.", tone:"pos"},
+      {text:"Genera superioridad numérica constante por su lado.", tone:"pos"},
+      {text:"Se desordena cuando el equipo pierde la pelota en ataque.", tone:"neg"},
+      {text:"Buena cobertura de todo el carril en ambas fases.", tone:"pos"},
+      {text:"Deja espacio libre a su espalda por la extensión de la corrida.", tone:"neg"},
+      {text:"Buena lectura para achicar sobre el interior rival.", tone:"pos"},
+      {text:"Se demora en el repliegue tras subir al ataque.", tone:"neg"},
+      {text:"Buen apoyo en amplitud para descomprimir al equipo.", tone:"pos"},
+      {text:"Poca ayuda al central de su lado en el último tramo.", tone:"neg"},
+      {text:"Buena sincronización con el interior de su carril.", tone:"pos"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para cubrir todo el carril durante los 90 minutos.", tone:"pos"},
+      {text:"Explosivo en las subidas repetidas.", tone:"pos"},
+      {text:"Pierde ritmo físico tras las corridas largas repetidas.", tone:"neg"},
+      {text:"Buena capacidad aeróbica, no se cansa en el ida y vuelta.", tone:"pos"},
+      {text:"Le cuesta sostener la intensidad en el segundo tiempo.", tone:"neg"},
+      {text:"Buena velocidad de recuperación tras perder la posición.", tone:"pos"}
+    ],
+    psicologico: [
+      {text:"Buena personalidad para asumir el desgaste de todo el carril.", tone:"pos"},
+      {text:"Se pone ansioso cuando no logra sumarse al ataque.", tone:"neg"},
+      {text:"Constante y aplicado en las dos fases del juego.", tone:"pos"},
+      {text:"Baja el rendimiento físico y mental en los minutos finales.", tone:"neg"},
+      {text:"Buena valentía para proponer en el 1v1 ofensivo.", tone:"pos"},
+      {text:"Se frustra cuando el equipo no le da continuidad por su lado.", tone:"neg"}
+    ]
+  },
+  "Mediocentro Ofensivo": {
+    tecnico: [
+      {text:"Buena llegada al área desde segunda línea.", tone:"pos"},
+      {text:"Preciso en el último pase para el delantero.", tone:"pos"},
+      {text:"Buena pegada de media distancia.", tone:"pos"},
+      {text:"Pierde precisión en el pase cuando llega con velocidad.", tone:"neg"},
+      {text:"Le cuesta la definición dentro del área.", tone:"neg"},
+      {text:"Buen manejo de pelota en la conducción entre líneas.", tone:"pos"},
+      {text:"Preciso en la pared para asociarse en el último tercio.", tone:"pos"},
+      {text:"Impreciso en el centro cuando arrastra marca por afuera.", tone:"neg"},
+      {text:"Buena técnica para el remate de primera.", tone:"pos"},
+      {text:"Se apresura en el control cuando llega desde atrás.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buenos tiempos de llegada al área rival.", tone:"pos"},
+      {text:"Buena lectura para ocupar el espacio que deja el delantero.", tone:"pos"},
+      {text:"Poco aporte defensivo cuando el equipo pierde la pelota.", tone:"neg"},
+      {text:"Buena conexión con los interiores y el delantero.", tone:"pos"},
+      {text:"Se desordena posicionalmente al sumarse al ataque.", tone:"neg"},
+      {text:"Buena capacidad de transición rápida ataque-defensa.", tone:"pos"},
+      {text:"Deja espacio libre en el medio cuando sube.", tone:"neg"},
+      {text:"Buena inteligencia para generar el doble contacto en el área.", tone:"pos"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para repetir llegadas al área.", tone:"pos"},
+      {text:"Explosivo en el último tramo hacia el área.", tone:"pos"},
+      {text:"Pierde piernas en los minutos finales.", tone:"neg"},
+      {text:"Buena capacidad de sprint repetido.", tone:"pos"},
+      {text:"Le cuesta sostener el ritmo en partidos exigentes físicamente.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena ambición goleadora desde segunda línea.", tone:"pos"},
+      {text:"Se frustra si no llega a convertir tras el esfuerzo.", tone:"neg"},
+      {text:"Buena valentía para pisar el área en el momento justo.", tone:"pos"},
+      {text:"Baja la intensidad cuando el equipo no genera juego.", tone:"neg"},
+      {text:"Buena personalidad para asumir la llegada como responsabilidad propia.", tone:"pos"}
+    ]
+  },
+  "Mediocentro Defensivo": {
+    tecnico: [
+      {text:"Buena salida corta para iniciar la circulación.", tone:"pos"},
+      {text:"Preciso en el pase de seguridad bajo presión.", tone:"pos"},
+      {text:"Buen primer control para girarse rápido.", tone:"pos"},
+      {text:"Pierde pelotas en la salida cuando lo presionan de frente.", tone:"neg"},
+      {text:"Le cuesta el pase largo para cambiar el juego.", tone:"neg"},
+      {text:"Buena técnica para el entrelineas corto.", tone:"pos"},
+      {text:"Preciso en la asistencia de gol de media distancia.", tone:"pos"},
+      {text:"Impreciso en el pase filtrado hacia el ataque.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buena cobertura del espacio entre líneas defensivas y ofensivas.", tone:"pos"},
+      {text:"Buena lectura para anticipar el contragolpe rival.", tone:"pos"},
+      {text:"Se desconecta del funcionamiento colectivo en fase ofensiva.", tone:"neg"},
+      {text:"Buena presión inmediata tras la pérdida.", tone:"pos"},
+      {text:"Le cuesta la cobertura cuando el compañero de pivote sube.", tone:"neg"},
+      {text:"Buena capacidad de recomposición defensiva rápida.", tone:"pos"},
+      {text:"Se posiciona mal ante el cambio de orientación rival.", tone:"neg"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para sostener el trabajo de recuperación.", tone:"pos"},
+      {text:"Fuerte en el cuerpo a cuerpo en la salida rival.", tone:"pos"},
+      {text:"Le falta velocidad para cubrir espacios grandes.", tone:"neg"},
+      {text:"Buen despliegue en toda la zona media.", tone:"pos"},
+      {text:"Pierde intensidad de marca en los últimos minutos.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena jerarquía para ordenar la salida del equipo.", tone:"pos"},
+      {text:"Se acelera con la pelota bajo presión rival.", tone:"neg"},
+      {text:"Buena madurez para simplificar el juego cuando hace falta.", tone:"pos"},
+      {text:"Baja la concentración en jugadas de pelota parada en contra.", tone:"neg"},
+      {text:"Buena personalidad para asumir la recuperación como prioridad.", tone:"pos"}
+    ]
+  },
+  "Interno": {
+    tecnico: [
+      {text:"Buena conducción en espacios amplios entre líneas.", tone:"pos"},
+      {text:"Preciso en el pase de ruptura hacia el ataque.", tone:"pos"},
+      {text:"Buen control orientado en carrera.", tone:"pos"},
+      {text:"Pierde pelotas en la conducción bajo presión rival.", tone:"neg"},
+      {text:"Le cuesta el remate desde fuera del área.", tone:"neg"},
+      {text:"Buena técnica para la pared rápida en velocidad.", tone:"pos"},
+      {text:"Preciso en el centro desde media distancia.", tone:"pos"},
+      {text:"Impreciso en el último pase cuando llega agitado.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Buen equilibrio entre ataque y defensa en el mediocampo.", tone:"pos"},
+      {text:"Buena movilidad para ocupar espacios libres.", tone:"pos"},
+      {text:"Se desordena cuando el equipo pierde la estructura.", tone:"neg"},
+      {text:"Buena capacidad de ida y vuelta constante.", tone:"pos"},
+      {text:"Deja espacios en el medio cuando se suma al ataque.", tone:"neg"},
+      {text:"Buena lectura para tapar líneas de pase interiores.", tone:"pos"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para sostener recorridos largos todo el partido.", tone:"pos"},
+      {text:"Explosivo en los cambios de ritmo.", tone:"pos"},
+      {text:"Pierde intensidad física en el tramo final.", tone:"neg"},
+      {text:"Buena capacidad de repetir esfuerzos de ida y vuelta.", tone:"pos"},
+      {text:"Le cuesta sostener el ritmo en partidos muy exigentes.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena entrega y sacrificio en las dos fases del juego.", tone:"pos"},
+      {text:"Se frustra cuando el desgaste no se traduce en resultado.", tone:"neg"},
+      {text:"Buena inteligencia para saber cuándo acompañar el ataque.", tone:"pos"},
+      {text:"Baja el rendimiento mental en los tramos finales.", tone:"neg"},
+      {text:"Buena personalidad para no bajar los brazos en la marca.", tone:"pos"}
+    ]
+  },
+  "Mediapunta": {
+    tecnico: [
+      {text:"Excelente habilidad para el último pase entre líneas.", tone:"pos"},
+      {text:"Buen manejo de pelota en espacios reducidos.", tone:"pos"},
+      {text:"Preciso en la definición cuando recibe de cara al arco.", tone:"pos"},
+      {text:"Pierde eficacia en la definición bajo marca cercana.", tone:"neg"},
+      {text:"Le cuesta el juego de espaldas al arco.", tone:"neg"},
+      {text:"Buena visión periférica para encontrar al hombre libre.", tone:"pos"},
+      {text:"Preciso en el pase filtrado a la espalda de la defensa.", tone:"pos"},
+      {text:"Impreciso en la definición mano a mano con el arquero.", tone:"neg"},
+      {text:"Buena gambeta corta para salir de la presión.", tone:"pos"}
+    ],
+    tactico: [
+      {text:"Excelente ubicación entre líneas para recibir libre de marca.", tone:"pos"},
+      {text:"Genera desequilibrio permanente en el último tercio.", tone:"pos"},
+      {text:"Poco aporte en la fase defensiva.", tone:"neg"},
+      {text:"Buena lectura de los movimientos del delantero para asociarse.", tone:"pos"},
+      {text:"Se aísla del funcionamiento colectivo cuando no recibe pelota.", tone:"neg"},
+      {text:"Buen desmarque de espaldas para recibir y girar.", tone:"pos"}
+    ],
+    fisico: [
+      {text:"Buena agilidad en espacios cortos.", tone:"pos"},
+      {text:"Resistencia limitada para el trabajo defensivo.", tone:"neg"},
+      {text:"Buen equilibrio corporal en el choque con el rival.", tone:"pos"},
+      {text:"Pierde intensidad física tras el primer tiempo.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena confianza para asumir la responsabilidad del último pase.", tone:"pos"},
+      {text:"Se frustra cuando el equipo no le da la pelota.", tone:"neg"},
+      {text:"Buena creatividad e iniciativa constante.", tone:"pos"},
+      {text:"Desconexión emocional cuando el equipo va perdiendo.", tone:"neg"},
+      {text:"Buena personalidad para pedir la pelota en momentos difíciles.", tone:"pos"}
+    ]
+  },
+  "Pivote": {
+    tecnico: [
+      {text:"Buena salida corta bajo presión inmediata del rival.", tone:"pos"},
+      {text:"Preciso en el pase de seguridad para no perder la pelota.", tone:"pos"},
+      {text:"Buen primer control para girarse rápido en espacios reducidos.", tone:"pos"},
+      {text:"Pierde pelotas en la salida cuando queda solo ante la presión.", tone:"neg"},
+      {text:"Le cuesta el pase largo para cambiar el frente de ataque.", tone:"neg"},
+      {text:"Buena técnica para el quite limpio sin cometer falta.", tone:"pos"},
+      {text:"Impreciso en el pase cuando recibe de espaldas bajo presión.", tone:"neg"}
+    ],
+    tactico: [
+      {text:"Excelente cobertura del espacio delante de la línea defensiva.", tone:"pos"},
+      {text:"Buena lectura para anticipar el contragolpe rival.", tone:"pos"},
+      {text:"Se desconecta del funcionamiento colectivo en fase ofensiva.", tone:"neg"},
+      {text:"Buena capacidad para cerrar líneas de pase interiores.", tone:"pos"},
+      {text:"Queda expuesto cuando el rival juega entre líneas.", tone:"neg"},
+      {text:"Buena recomposición defensiva tras la pérdida propia.", tone:"pos"}
+    ],
+    fisico: [
+      {text:"Buena resistencia para sostener el trabajo de recuperación 90 minutos.", tone:"pos"},
+      {text:"Fuerte en el cuerpo a cuerpo frente al área propia.", tone:"pos"},
+      {text:"Le falta velocidad para cubrir espacios grandes a la carrera.", tone:"neg"},
+      {text:"Buen despliegue para tapar toda la zona delante de la defensa.", tone:"pos"},
+      {text:"Pierde intensidad de marca en los últimos minutos del partido.", tone:"neg"}
+    ],
+    psicologico: [
+      {text:"Buena jerarquía para ordenar la salida y el repliegue del equipo.", tone:"pos"},
+      {text:"Se acelera con la pelota bajo presión alta del rival.", tone:"neg"},
+      {text:"Buena madurez para simplificar el juego cuando el partido lo exige.", tone:"pos"},
+      {text:"Baja la concentración en jugadas de pelota parada en contra.", tone:"neg"},
+      {text:"Buena personalidad para asumir el trabajo sucio sin protagonismo.", tone:"pos"}
+    ]
+  }
+};
+
+const PROFILES = [
+  {key:"tecnico", label:"Perfil Técnico"},
+  {key:"tactico", label:"Perfil Táctico"},
+  {key:"fisico", label:"Perfil Físico"},
+  {key:"psicologico", label:"Perfil Psicológico"}
+];
+
+// Banco general para la sección de Conclusión (no depende del puesto)
+const GENERAL_LISTS = {
+  fortalezas: [
+    "Buena capacidad de decisión bajo presión.",
+    "Buen manejo de los dos perfiles (zurdo/diestro).",
+    "Buena lectura de juego en ambas fases.",
+    "Buen liderazgo dentro del campo.",
+    "Buena proyección física para seguir desarrollándose.",
+    "Buena adaptación a distintos sistemas de juego.",
+    "Buena mentalidad competitiva y hambre de triunfo.",
+    "Buena capacidad de sacrificio por el equipo.",
+    "Buen manejo de los momentos importantes del partido.",
+    "Buena progresión en los últimos partidos observados."
+  ],
+  debilidades: [
+    "Le cuesta sostener el nivel de rendimiento durante los 90 minutos.",
+    "Inconsistencia entre partido y partido.",
+    "Le cuesta adaptarse a la presión alta rival.",
+    "Bajo rendimiento en partidos de mucha exigencia.",
+    "Le falta metros de recorrido en algunas fases del partido.",
+    "Se desconcentra en tramos del partido.",
+    "Le cuesta el juego aéreo por su porte físico.",
+    "Poca variedad de recursos técnicos bajo presión.",
+    "Le cuesta el juego colectivo, busca siempre la jugada individual.",
+    "Rendimiento irregular según el rival enfrentado."
+  ],
+  mejorar: [
+    "Trabajar la toma de decisiones en el último tercio.",
+    "Mejorar el trabajo defensivo en la marca.",
+    "Sumar volumen de juego con pelota dominada.",
+    "Trabajar la definición bajo presión.",
+    "Mejorar la lectura táctica en las transiciones.",
+    "Desarrollar el perfil físico para sostener el ritmo de competencia.",
+    "Trabajar la fortaleza mental ante la adversidad.",
+    "Mejorar la comunicación con sus compañeros.",
+    "Sumar continuidad en el nivel de rendimiento.",
+    "Desarrollar el juego con ambas piernas."
+  ]
+};
+const GENERAL_SECTIONS = [
+  {key:"fortalezas", label:"Fortalezas", cssClass:"fortalezas"},
+  {key:"debilidades", label:"Debilidades", cssClass:"debilidades"},
+  {key:"mejorar", label:"Aspectos a Mejorar", cssClass:"mejorar"}
+];
+
+// Cargar puestos en el select
+const posSelect = document.getElementById('playerPosition');
+Object.keys(PHRASES).forEach(p=>{
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  posSelect.appendChild(opt);
+});
+
+function renderAllProfiles(){
+  const container = document.getElementById('profilesContainer');
+  container.innerHTML = "";
+  const puesto = posSelect.value;
+
+  if(!puesto){
+    container.innerHTML = `<div class="card"><span style="color:var(--muted);font-size:13px;">Elegí un puesto arriba para ver las frases correspondientes.</span></div>`;
+    document.getElementById('conclusionContainer').innerHTML = "";
+    return;
+  }
+
+  PROFILES.forEach(profile=>{
+    const phrases = PHRASES[puesto][profile.key] || [];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="profile-title">
+        <h2>${profile.label}</h2>
+      </div>
+      <div class="phrase-list" id="list-${profile.key}"></div>
+      <div class="freetext-wrap">
+        <label>¿Observaste algo más? Escribilo acá</label>
+        <textarea id="freetext-${profile.key}" placeholder="Ej: en el segundo tiempo bajó el ritmo notoriamente..." oninput="updatePreview('${profile.key}')"></textarea>
+      </div>
+      <div class="preview" id="preview-${profile.key}">El texto se arma automáticamente a medida que tildás frases o escribís tu observación...</div>
+    `;
+    container.appendChild(card);
+
+    const list = card.querySelector(`#list-${profile.key}`);
+    phrases.forEach((ph, idx)=>{
+      const item = document.createElement('label');
+      item.className = 'phrase-item';
+      item.innerHTML = `<input type="checkbox" data-tone="${ph.tone}" onchange="updatePreview('${profile.key}')"> <span>${ph.text}</span>`;
+      list.appendChild(item);
+    });
+  });
+
+  renderConclusionSection();
+}
+
+function updatePreview(profileKey){
+  const list = document.getElementById(`list-${profileKey}`);
+  const checked = Array.from(list.querySelectorAll('input:checked'));
+  checked.forEach(c => c.closest('.phrase-item').classList.add('checked'));
+  Array.from(list.querySelectorAll('input:not(:checked)')).forEach(c => c.closest('.phrase-item').classList.remove('checked'));
+
+  const preview = document.getElementById(`preview-${profileKey}`);
+  const freetext = document.getElementById(`freetext-${profileKey}`).value.trim();
+  const texts = checked.map(c => c.closest('.phrase-item').querySelector('span').textContent);
+  if(freetext) texts.push(freetext);
+
+  if(texts.length === 0){
+    preview.textContent = "El texto se arma automáticamente a medida que tildás frases o escribís tu observación...";
+    preview.classList.remove('filled');
+  } else {
+    preview.textContent = texts.join(' ');
+    preview.classList.add('filled');
+  }
+}
+
+function renderConclusionSection(){
+  const container = document.getElementById('conclusionContainer');
+  container.innerHTML = "";
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="profile-title"><h2>Conclusión General</h2></div>`;
+
+  GENERAL_SECTIONS.forEach(sec=>{
+    const block = document.createElement('div');
+    block.className = `conclusion-section ${sec.cssClass}`;
+    block.innerHTML = `
+      <h3>${sec.label}</h3>
+      <div class="phrase-list" id="list-gen-${sec.key}"></div>
+      <div class="freetext-wrap">
+        <label>Agregar algo más en ${sec.label.toLowerCase()}</label>
+        <textarea id="freetext-gen-${sec.key}" placeholder="Escribí acá si observaste algo puntual..." oninput="updateGeneralPreview('${sec.key}')"></textarea>
+      </div>
+      <div class="preview" id="preview-gen-${sec.key}">El texto se arma automáticamente a medida que tildás opciones o escribís tu observación...</div>
+    `;
+    card.appendChild(block);
+
+    const list = block.querySelector(`#list-gen-${sec.key}`);
+    GENERAL_LISTS[sec.key].forEach(text=>{
+      const item = document.createElement('label');
+      item.className = 'phrase-item';
+      item.innerHTML = `<input type="checkbox" onchange="updateGeneralPreview('${sec.key}')"> <span>${text}</span>`;
+      list.appendChild(item);
+    });
+  });
+
+  container.appendChild(card);
+}
+
+function updateGeneralPreview(sectionKey){
+  const list = document.getElementById(`list-gen-${sectionKey}`);
+  const checked = Array.from(list.querySelectorAll('input:checked'));
+  checked.forEach(c => c.closest('.phrase-item').classList.add('checked'));
+  Array.from(list.querySelectorAll('input:not(:checked)')).forEach(c => c.closest('.phrase-item').classList.remove('checked'));
+
+  const preview = document.getElementById(`preview-gen-${sectionKey}`);
+  const freetext = document.getElementById(`freetext-gen-${sectionKey}`).value.trim();
+  const texts = checked.map(c => c.closest('.phrase-item').querySelector('span').textContent);
+  if(freetext) texts.push(freetext);
+
+  if(texts.length === 0){
+    preview.textContent = "El texto se arma automáticamente a medida que tildás opciones o escribís tu observación...";
+    preview.classList.remove('filled');
+  } else {
+    preview.textContent = texts.join(' ');
+    preview.classList.add('filled');
+  }
+}
+
+function generateReport(){
+  const name = document.getElementById('playerName').value || "Jugador sin nombre";
+  const team = document.getElementById('playerTeam').value || "Equipo no especificado";
+  const puesto = posSelect.value || "Puesto no especificado";
+  const foot = document.getElementById('playerFoot').value;
+
+  if(!posSelect.value){
+    alert("Che, primero elegí el puesto del jugador arriba.");
+    return;
+  }
+
+  document.getElementById('outName').textContent = name;
+  document.getElementById('outTeam').textContent = "Equipo: " + team;
+  document.getElementById('outPosition').textContent = "Puesto: " + puesto;
+  document.getElementById('outFoot').textContent = "Pie hábil: " + foot;
+
+  const blocksContainer = document.getElementById('reportBlocks');
+  blocksContainer.innerHTML = "";
+
+  PROFILES.forEach(profile=>{
+    const preview = document.getElementById(`preview-${profile.key}`);
+    const text = preview.classList.contains('filled')
+      ? preview.textContent
+      : "Sin observaciones cargadas para este perfil.";
+
+    const block = document.createElement('div');
+    block.className = 'report-block';
+    block.innerHTML = `
+      <h3>${profile.label}</h3>
+      <p>${text}</p>
+    `;
+    blocksContainer.appendChild(block);
+  });
+
+  const conclusionContainer = document.getElementById('reportConclusion');
+  conclusionContainer.innerHTML = "";
+  GENERAL_SECTIONS.forEach(sec=>{
+    const preview = document.getElementById(`preview-gen-${sec.key}`);
+    const text = preview.classList.contains('filled')
+      ? preview.textContent
+      : "Sin observaciones cargadas.";
+
+    const block = document.createElement('div');
+    block.className = 'report-block';
+    block.innerHTML = `
+      <h3>${sec.label}</h3>
+      <p>${text}</p>
+    `;
+    conclusionContainer.appendChild(block);
+  });
+
+  document.getElementById('profilesContainer').style.display = 'none';
+  document.getElementById('conclusionContainer').style.display = 'none';
+  document.querySelector('.generate-btn').style.display = 'none';
+  document.getElementById('reportOutput').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function backToForm(){
+  document.getElementById('profilesContainer').style.display = 'block';
+  document.getElementById('conclusionContainer').style.display = 'block';
+  document.querySelector('.generate-btn').style.display = 'block';
+  document.getElementById('reportOutput').style.display = 'none';
+}
+
+// Estado inicial
+renderAllProfiles();
+</script>
+</body>
+</html>
