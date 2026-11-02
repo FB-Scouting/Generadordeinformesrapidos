@@ -1117,6 +1117,7 @@ function generateReport(){
   document.querySelector('.generate-btn').style.display = 'none';
   document.getElementById('reportOutput').style.display = 'block';
   window.scrollTo(0,0);
+  sendToBruto();
 }
 
 function backToForm(){
@@ -1130,6 +1131,16 @@ function backToForm(){
 renderAllProfiles();
 </script>
 
+
+<script id="scoutpro-report-transfer">
+function sendToBruto(){
+ const $=id=>document.getElementById(id),perfil={},conclusion={};
+ ['tecnico','tactico','fisico','psicologico'].forEach(k=>{const x=$('preview-'+k);if(x&&x.classList.contains('filled'))perfil[k]=x.textContent.trim()});
+ ['fortalezas','debilidades','mejorar'].forEach(k=>{const x=$('preview-gen-'+k);if(x&&x.classList.contains('filled'))conclusion[k]=x.textContent.trim()});
+ const jugador=$('playerName').value.trim();if(!jugador||parent===window)return;
+ parent.postMessage({type:'scoutpro-report:to-bruto',module:'igen',record:{jugador,perfil,conclusion}},'https://fb-scouting.github.io');
+}
+</script>
 <script id="scoutpro-cloud-reports">
 (function(){
  const MODULE="igen",ORIGIN='https://fb-scouting.github.io';
