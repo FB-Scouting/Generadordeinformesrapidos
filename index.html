@@ -219,7 +219,7 @@
     <div class="header-grid">
       <div>
         <label>Nombre del jugador</label>
-        <input type="text" id="playerName" placeholder="Ej: Juan Pérez" list="scoutproPlayerOptions" autocomplete="off"><datalist id="scoutproPlayerOptions"></datalist>
+        <input type="text" id="playerName" placeholder="Ej: Juan Pérez">
       </div>
       <div>
         <label>Equipo</label>
@@ -1131,14 +1131,7 @@ function backToForm(){
 renderAllProfiles();
 </script>
 
-<script id="scoutpro-player-context">
-(function(){const O='https://fb-scouting.github.io';let ps=[];const $=id=>document.getElementById(id),norm=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\\s+/g,' ').trim();
-function apply(){const p=ps.find(x=>norm(x.name)===norm($('playerName').value));if(!p)return;$('playerTeam').value=p.team||$('playerTeam').value;const pos=String(p.position||'').toLowerCase(),v=pos.includes('arquero')?'Arquero':pos.includes('central')?'Defensor Central':pos.includes('lateral')?'Lateral':pos.includes('extremo')?'Extremo':pos.includes('delantero')?'Delantero':pos.includes('volante')?'Volante':'';if(v&&Array.from($('playerPosition').options).some(o=>o.value===v))$('playerPosition').value=v;if(p.foot){const f=p.foot.toLowerCase();$('playerFoot').value=f.includes('izq')?'Izquierdo':f.includes('amb')?'Ambidiestro':'Derecho'}let c=$('scoutproPlayerCard');if(!c){c=document.createElement('div');c.id='scoutproPlayerCard';c.style.cssText='display:flex;align-items:center;gap:10px;margin:8px 0';$('playerName').parentElement.appendChild(c)}c.innerHTML=(p.photo?'<img src="'+p.photo+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px">':'')+(p.crest?'<img src="'+p.crest+'" style="width:40px;height:40px;object-fit:contain">':'')+'<span>'+p.name+' · '+(p.team||'')+'</span>'}
-$('playerName').addEventListener('input',()=>{const c=$('scoutproPlayerCard');if(c)c.style.display='none';if(ps.some(p=>norm(p.name)===norm($('playerName').value)))apply()});
-window.addEventListener('message',e=>{if(e.origin!==O||e.source!==parent||!e.data||e.data.type!=='scoutpro-report:players-context')return;ps=e.data.players||[];$('scoutproPlayerOptions').innerHTML=ps.map(p=>'<option value="'+String(p.name).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'"></option>').join('');apply()});
-if(parent!==window)parent.postMessage({type:'scoutpro-report:players-context-request',module:'igen'},O)})();
-function sendToBruto(){const $=id=>document.getElementById(id),p={},c={};['tecnico','tactico','fisico','psicologico'].forEach(k=>{const x=$('preview-'+k);if(x&&x.classList.contains('filled'))p[k]=x.textContent.trim()});['fortalezas','debilidades','mejorar'].forEach(k=>{const x=$('preview-gen-'+k);if(x&&x.classList.contains('filled'))c[k]=x.textContent.trim()});if(parent!==window)parent.postMessage({type:'scoutpro-report:to-bruto',module:'igen',record:{jugador:$('playerName').value,equipo:$('playerTeam').value,puesto:$('playerPosition').value,pie:$('playerFoot').value,perfil:p,conclusion:c}},O)}
-</script>
+
 <script id="scoutpro-cloud-reports">
 (function(){
  const MODULE="igen",ORIGIN='https://fb-scouting.github.io';
